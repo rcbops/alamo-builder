@@ -1,0 +1,21 @@
+Template: debian-installer/rpcs-pre/title
+Type: text
+Description: RPCS Pre-Networking
+
+Template: rpcs-pre/role
+Type: select
+Choices: Controller,Compute,All-In-One
+Description: Choose the role for this node.\n* Controller - Horizon, Nova API, Scheduler, Keystone, Glance, RabbitMQ, and MySQL.\n* Compute - Nova Compute and KVM\n* All-In-One - All of the above on a single system
+
+Template: rpcs-pre/net_public_iface
+Type: select
+Choices: ${IFACES}
+Description: Public Interface.
+ Choose which interface you would like to use for public (internet/management) connectivity
+
+Template: rpcs-pre/net_private_iface
+Type: select
+Choices: ${IFACES}
+Description: Private Interface.
+ Choose which interface you would like to use for private (VM network) connectivity
+

@@ -1,0 +1,8 @@
+[Plymouth Theme]
+Name=RackStack
+Description=Rackspace (TM) Private Cloud Software
+ModuleName=script
+
+[script]
+ImageDir=/lib/plymouth/themes/rackstack
+ScriptFile=/lib/plymouth/themes/rackstack/rackstack.script

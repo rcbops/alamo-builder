@@ -1,0 +1,51 @@
+#!/bin/sh -e
+
+MODULE=rpcs-pre
+
+# Source debconf library.
+. /usr/share/debconf/confmodule
+. /var/lib/dpkg/info/rpcs-functions
+
+ignore="lo" # Default interface to ignore
+ifaces=$(get_ifaces "$ignore") # Assignment translates \n -> ' '
+count=$(echo $ifaces | wc -w) # Number of interfaces
+
+get_role
+
+# If only one interface; tell everything so the question isn't asked
+if [ $count -eq 1 ]; then
+    public=$ifaces
+    db_set $MODULE/net_public_iface $public
+    db_set $MODULE/net_private_iface $public
+    db_fset rpcs-post/net_dmz seen true
+else
+    # All roles need to select the public interface
+    db_subst $MODULE/net_public_iface IFACES $(commafy $ifaces)
+    db_input critical $MODULE/net_public_iface || true
+    db_go # .do-it
+
+    # Snag public
+    db_get $MODULE/net_public_iface
+    public="$RET"
+
+    # Add it to ignore list
+    ignore=${ignore}"|$public"
+    # Update list
+    ifaces=$(get_ifaces "$ignore")
+
+    # Populate the choices for private interface selection
+    db_subst $MODULE/net_private_iface IFACES $(commafy $ifaces)
+    db_input critical $MODULE/net_private_iface || true
+    db_go # .do-it
+fi
+
+# Tell netcfg about it
+db_set netcfg/choose_interface "$public"
+db_fset netcfg/choose_interface seen true
+
+# Walk through selections
+for i in role net_public_iface net_private_iface; do
+    # Dump to config file
+    db_get $MODULE/$i
+    echo "$i=\"$RET\"" >> /tmp/rpcs.cfg
+done

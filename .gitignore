@@ -1,0 +1,10 @@
+build/
+test/
+iso/
+*.qcow2
+*.img
+*.deb
+*templated
+localconfig.sh
+.chef
+version.cfg

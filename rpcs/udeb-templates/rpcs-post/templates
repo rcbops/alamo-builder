@@ -1,0 +1,113 @@
+Template: debian-installer/rpcs-post/title
+Type: text
+Description: RPCS Post-Networking
+
+Template: rpcs-post/net_con_ip
+Type: string
+Description: Enter IP of Controller node.
+
+Template: rpcs-post/net_mgmt
+Type: string
+Description: Enter CIDR block for Management network.
+
+Template: rpcs-post/net_nova
+Type: string
+Description: Enter CIDR block for Nova network.
+
+Template: rpcs-post/net_public
+Type: string
+Description: Enter CIDR block for Public network.
+
+Template: rpcs-post/net_fixed
+Type: string
+Default: 172.31.0.0/24
+Description: Enter CIDR block for Nova Fixed (VM) network.
+
+Template: rpcs-post/net_dmz
+Type: string
+Description: Enter CIDR block(s) for Nova Fixed DMZ network(s), separated by spaces.
+ If you have a network or networks you want to route to/from the Nova Fixed network,
+ you can enter them here. This will setup DMZ(s) in Nova which will allow traffic to
+ a DMZ to pass without any SNAT or Floating IPs. This also requires an IP in the
+ Fixed network range on the router for the DMZ network(s).
+ .
+ This is an optional field. Leaving it blank will not enable any special NAT exceptions.
+
+Template: rpcs-post/net_dmz_gw
+Type: string
+Description: Enter IP of Nova Fixed DMZ Gateway.
+ Please enter the IP address of the Nova Fixed DMZ Gateway for the DMZ network(s)
+ ${DMZ_NETWORKS} you specified in the previous step. This IP must be in the Fixed
+ network range on the router for the DMZ network(s).
+ .
+ This field is required to setup routing to the DMZ(s) you specified previously.
+
+Template: rpcs-post/net_bridge
+Type: string
+Default: br0
+Description: Enter name of Nova Fixed bridge interface.
+
+Template: rpcs-post/os_admin_passwd
+Type: password
+Description: Enter a password for the Openstack "admin" user.
+ This password will be used to log into the OpenStack Dashboard.
+ .
+ This only accepts alphanumeric passwords.
+
+Template: rpcs-post/os_user_name
+Type: string
+Default: demo
+Description: Enter a username for a normal Openstack user.
+
+Template: rpcs-post/os_user_passwd
+Type: password
+Description: Enter a password for the normal Openstack user.
+ This only accepts alphanumeric passwords.
+
+Template: rpcs-post/repeat_password
+Type: password
+Description: Please re-enter the password
+
+Template: rpcs-post/invalid_overlap
+Type: error
+Description: You've entered an overlapping CIDR block.
+ The Nova Fixed network range cannot overlap with the primary
+ network interface range. Please enter a new Fixed IP range.
+
+Template: rpcs-post/invalid_mask
+Type: error
+Description: You have entered an invalid Netmask.
+ Please check the mask carefully and re-enter it correctly.
+
+Template: rpcs-post/invalid_ip
+Type: error
+Description: You have entered an invalid IP address.
+ Please check the address carefully and re-enter it correctly.
+
+Template: rpcs-post/invalid_cidr
+Type: error
+Description: You have entered an invalid CIDR block.
+ Please check the block carefully and re-enter it correctly.
+
+Template: rpcs-post/invalid_dmz
+Type: error
+Description: You have entered an invalid DMZ CIDR block or blocks.
+ Please check the block(s) carefully and re-enter it correctly.
+
+Template: rpcs-post/invalid_bridge
+Type: error
+Description: You have entered an invalid bridge name.
+ Interface names must start with a letter and contain only
+ alphanumeric characters. Please check the name carefully
+ and re-enter it correctly.
+
+Template: rpcs-post/invalid_password
+Type: error
+Description: The password you entered contains non-alphanumeric characters.
+ Please enter a valid alphanumeric password.
+
+Template: rpcs-post/non_matching_password
+Type: error
+Description: The passwords you entered do not match.
+ Please check your password and retype.
+

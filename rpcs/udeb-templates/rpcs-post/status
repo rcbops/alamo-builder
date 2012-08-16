@@ -1,0 +1,7 @@
+Package: rpcs-post
+Status: install ok unpacked
+Version: 0.1-1
+Depends: cdebconf-udeb
+Description: RPCS
+Installer-Menu-Item: 1850
+

@@ -1,0 +1,55 @@
+#!/bin/sh -e
+
+MODULE=rpcs-post
+
+# Source debconf library.
+. /usr/share/debconf/confmodule
+. /var/lib/dpkg/info/rpcs-functions
+
+db_get rpcs-pre/role
+_ROLE="$RET"
+
+# Ask for controller IP if we're *just* a compute node
+if [ "$_ROLE" = "Compute" ]; then
+    get_ip "$MODULE/net_con_ip"
+fi
+
+# Ask for bridge if we've got compute
+if [ "$_ROLE" = "Compute" ] || [ "$_ROLE" = "All-In-One" ]; then
+    get_bridge "$MODULE/net_bridge"
+fi
+
+# Ask for the rest if we've got controller
+if [ "$_ROLE" = "Controller" ] || [ "$_ROLE" = "All-In-One" ]; then
+    db_get rpcs-pre/net_public_iface
+    net=$(grep 'network [0-9]' /etc/network/interfaces | cut -d' ' -f2)
+    bits=$(ip a sh dev $RET | grep 'inet ' | cut -d/ -f2 | cut -d' ' -f1)
+    _CIDR=$net/$bits
+
+    # Prompt for nova fixed range
+    get_net_item "cidr,overlap" $MODULE/net_fixed
+
+    # TODO: Multiple DMZs
+    get_dmz "$MODULE/net_dmz" 1 # optional
+    if [ ! "$RET" = "" ]; then
+        db_subst $MODULE/net_dmz_gw DMZ_NETWORKS "$RET"
+        get_ip "$MODULE/net_dmz_gw"
+    fi
+
+    get_password "$MODULE/os_admin_passwd"
+    db_input critical $MODULE/os_user_name || true
+    get_password "$MODULE/os_user_passwd"
+fi
+
+# Set OSOPS networks
+# TODO: Probably need to set these differently for 2-NIC
+for i in net_mgmt net_nova net_public; do
+    db_set $MODULE/$i "$_CIDR"
+done
+
+# Walk through selections
+for i in net_con_ip net_mgmt net_nova net_public net_fixed net_dmz net_dmz_gw net_bridge os_admin_passwd os_user_name os_user_passwd; do
+    # Dump to config file
+    db_get $MODULE/$i
+    echo "$i=\"$RET\"" >> /tmp/rpcs.cfg
+done

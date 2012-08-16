@@ -1,0 +1,7 @@
+Package: eula
+Status: install ok unpacked
+Version: 0.1-1
+Depends: cdebconf-udeb
+Description: RPCS-EULA
+Installer-Menu-Item: 1649
+

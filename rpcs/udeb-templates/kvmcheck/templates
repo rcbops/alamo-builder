@@ -1,0 +1,11 @@
+Template: debian-installer/kvmcheck/title
+Type: text
+Description: Checking for Hardware Virtualization
+
+Template: kvmcheck/error
+Type: error
+Description: Hardware virtualization is not enabled.
+ Please enable hardware virtualization.
+ .
+ Hit Continue to reboot your system.
+

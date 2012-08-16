@@ -1,0 +1,16 @@
+Template: debian-installer/pingcheck/title
+Type: text
+Description: RPCS-pingcheck
+
+Template: pingcheck/note
+Type: text
+Description: Checking for network connectivity
+
+Template: pingcheck/error
+Type: error
+Description: Cannot verify network connectivity
+ We cannot verify that you are connected to the internet. The
+ installer requires internet access to complete.
+ .
+ Please resolve your network issues and hit continue.
+

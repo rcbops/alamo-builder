@@ -1,0 +1,231 @@
+#
+# Must set MODULE="udeb-name"
+#
+
+valid_ip() {
+    # $1 - ip range string
+
+    # This was adapted from http://stackoverflow.com/a/9276777
+    if case $1 in
+        # Invalid if it contains any character other than number or dot
+        # Invalid if it contains more than three dots
+        # Invalid if it contains two adjacent dots
+        # Invalid if it begins with a non-number
+        # Invalid if it ends with a non-number
+        *[!.0-9]* | *.*.*.*.* | *..* | [!0-9]* | *[!0-9] ) false ;;
+        # Invalid if it contains a number bigger than 255:
+        #  256-259 or 260-299 or 300-999 or four adjacent digits
+        *25[6-9]* | *2[6-9][0-9]* | *[3-9][0-9][0-9]* | *[0-9][0-9][0-9][0-9]* ) false;;
+        # Verify that it contains three dots
+        *.*.*.* ) true ;;
+        # Failing that, invalid after all (too few dots)
+        *) false ;;
+    esac; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+valid_cidr() {
+    # $1 - cidr string
+
+    local ip=$(echo $1 | cut -d '/' -f1)
+    local cidr=$(echo $1 | cut -d '/' -f2)
+
+    if valid_ip $ip; then
+        if [ $cidr -le 32 ] && [ $cidr -ge 0 ]; then
+            return 0
+        else
+            return 1
+        fi
+    else
+        return 1
+    fi
+}
+
+show_error() {
+    # $1 - debconf variable
+    # $2 - error variable
+    [ -n $1 ] && db_set $1 ""
+    db_input critical $2 || true
+    db_go
+}
+
+get_password() {
+    # $1 - debconf variable
+
+     while true; do
+        db_input critical $1 || true
+        db_go
+        db_get $1
+        if valid_password "$RET"; then
+           local CURRENT=$RET
+           # get the password again and make sure it matches
+           db_input critical $MODULE/repeat_password || true
+           db_go
+           db_get $MODULE/repeat_password
+
+           # check they match and break if they do
+           if [ "$RET" = "$CURRENT" ]; then
+                break
+
+           # unset, rinse and repeat if they don't
+           else
+               show_error $1 $MODULE/non_matching_password
+           fi
+
+        else
+            show_error $1 $MODULE/invalid_password
+        fi
+    done
+}
+
+get_net_item() {
+    # $1 - types of items (comma separated)
+    # $2 - debconf variable
+    # $3 - alt behavior: 0 = all validators/errors, 1 = optional/no errors
+
+    # Expand items
+    local items=$(decommafy $1)
+
+    # Assume invalid
+    local valid=1
+    while [ ! $valid -eq 0 ]; do
+        db_input critical $2 || true
+        db_go
+        db_get $2
+
+        # If optional and empty, bail
+        if [ $3 -eq 1 ] && [ -z "$RET" ]; then
+            break
+        fi
+        
+        for item in $items; do # For each validator
+            if valid_$item "$RET"; then
+                valid=0 # Flag a validator succeeded
+                continue
+            else
+                valid=1 # Or flag still invalid
+                show_error $2 "$MODULE/invalid_$item"
+                break
+            fi
+        done
+    done
+}
+
+get_ip() { get_net_item ip $*; }
+get_cidr() { get_net_item cidr $*; }
+get_bridge() { get_net_item bridge $*; }
+get_dmz() { get_net_item dmz $*; }
+
+valid_dmz() {
+    # $1 - space-separated list of CIDRs
+    echo $*
+    for cidr in $(echo $*); do
+        echo $cidr
+        if ! valid_cidr $cidr; then return 1; fi
+    done
+    return 0
+}
+
+# Validate passwords only contain alphanumeric characters
+valid_password() {
+    # $1 - password to be validated
+
+    [ $(echo $1 | sed -e 's/[^[:alnum:]]//g') = $1 ]
+    return $?
+}
+
+octets_to_int() {
+    local int
+    for octet in $(echo $1 | sed 's/\./ /g'); do
+        int=$(((int * 256) + octet))
+    done
+    _INT=$int
+}
+
+bits_to_int() {
+    local bits=$1
+    _INT=$((2**bits - 1))
+}
+
+int_to_bits() {
+    local int=$1
+    local bits=0
+    while [ $int -gt 0 ]; do
+        int=$((int >> 1))
+        bits=$((bits + 1))
+    done
+    _BITS=$bits
+}
+
+# Some validation functions
+addr_low_high() {
+    # $1 - cidr
+
+    local addr=${1%%/*}
+    local bits=${1##*/}
+
+    _BITS=$bits
+    octets_to_int $addr
+    _LOW=$_INT
+    bits_to_int $((32 - bits))
+    _HIGH=$((_LOW + _INT))
+}
+
+valid_overlap() {
+    # $1 - CIDR
+
+    local one_low
+    local one_high
+    local two_low
+    local two_high
+
+    addr_low_high $1
+    one_low=$_LOW
+    one_high=$_HIGH
+
+    addr_low_high $_CIDR
+    two_low=$_LOW
+    two_high=$_HIGH
+
+    if [ $two_low -le $one_low ] || [ $two_low -ge $one_high ]; then
+        if [ $two_high -le $one_low ] || [ $two_high -ge $one_high ]; then
+            return 0
+        fi
+    fi
+    return 1
+}
+
+valid_bridge () {
+    # $1 - iface to be validated
+    [ "$(echo $1 | sed -n '/^[[:alpha:]][[:alnum:]]*$/p')" = $1 ]
+    return $?
+}
+
+# Echo list of interfaces with selective ignores
+get_ifaces () {
+    # $1 = interfaces to ignore, separated by |
+    echo $(ip l | sed -nr "/(^ |$1)/! s/^.+: (.+):.+\$/\\1/p")
+}
+
+commafy () {
+    # $* = space-separated list of words
+    echo $(IFS=,; echo "$*")
+}
+
+decommafy () {
+    # $1 = comma-separated list of words
+    echo $(IFS=,; echo $1)
+}
+
+get_role() {
+    # Ask for role
+    db_input critical $MODULE/role || true
+    db_go
+     
+    # Snag and store role
+    db_get $MODULE/role
+    _ROLE="$RET"
+}

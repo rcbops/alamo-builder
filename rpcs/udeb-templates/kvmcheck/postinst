@@ -1,0 +1,10 @@
+#!/bin/sh -e
+
+# Source debconf library.
+. /usr/share/debconf/confmodule
+
+if ! grep -c "svm\|vmx" /proc/cpuinfo 2>&1 >/dev/null; then
+    db_input critical kvmcheck/error || true
+    db_go
+    /sbin/reboot
+fi

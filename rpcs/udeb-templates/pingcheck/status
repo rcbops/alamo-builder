@@ -1,0 +1,7 @@
+Package: pingcheck
+Status: install ok unpacked
+Version: 0.1-1
+Depends: cdebconf-udeb
+Description: RPCS-pingcheck
+Installer-Menu-Item: 1849
+
