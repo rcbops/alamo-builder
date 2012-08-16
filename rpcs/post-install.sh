@@ -1,5 +1,9 @@
 #!/bin/bash
-#set -x
+
+exec 9>/var/log/post-install.debug
+BASH_XTRACEFD=9
+set -x
+
 set -o errtrace
 
 export DEBIAN_FRONTEND=noninteractive
@@ -78,7 +82,7 @@ if [ $role = "Controller" ] || [ $role = "All-In-One" ]; then
     build_chef_server
 
     do_status 50 "Starting chef server"
-    virsh start chef-server 1>/dev/null
+    virsh start chef-server 1>&9
 
     do_status 60 "Waiting for chef server to start up"
     port_test 10 30 $chef 22
