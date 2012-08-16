@@ -1,7 +1,7 @@
 DESCRIPTION
 ===========
 
-Rackstack builds an iso that installs multinode openstack clusters.
+alamo-builder builds an iso that installs multinode openstack clusters.
 
 USING
 =====
