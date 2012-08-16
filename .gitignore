@@ -1,10 +1,10 @@
 build/
 test/
 iso/
+*.xml
 *.qcow2
 *.img
 *.deb
 *templated
-localconfig.sh
 .chef
 version.cfg
