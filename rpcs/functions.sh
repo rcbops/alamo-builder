@@ -129,11 +129,11 @@ function do_exit() {
         mv /opt/rpcs/post-install.sh /opt/rpcs/post-install.sh.original
         chmod 600 /opt/rpcs/post-install.sh.original
     fi
+    echo ${status} > /opt/rpcs/.status
+
     do_complete
     rm -f ${STATUS_FIFO}
     # do any other cleanup here.
-
-    echo ${status} > /opt/rpcs/.status
 
     exit ${status}
 }
@@ -152,9 +152,9 @@ function install_chef() {
     echo chef chef/chef_server_url string http://$chef:4000 | debconf-set-selections
     mkdir -p /etc/chef
     if [ ! -e /opt/rpcs/chef-full.deb ]; then
-        run_twice curl -L http://opscode.com/chef/install.sh | bash 1>/dev/null
+        run_twice curl -L http://opscode.com/chef/install.sh | bash 1>&9
     else
-        dpkg -i /opt/rpcs/chef-full.deb 1>/dev/null
+        dpkg -i /opt/rpcs/chef-full.deb 1>&9
     fi
     cat >> /etc/chef/client.rb <<EOF
     chef_server_url "http://${chef}:4000"
@@ -164,10 +164,10 @@ EOF
 
 function disable_virbr0 {
     # Disable default virbr0 network
-    virsh net-autostart default --disable 1>/dev/null
+    virsh net-autostart default --disable 1>&9
     if virsh net-list | grep -q default; then
         echo "Disabling default libvirt network ..."
-        virsh net-destroy default 1>/dev/null
+        virsh net-destroy default 1>&9
     fi
 }
 
@@ -202,7 +202,7 @@ EOF
 function setup_iptables {
     # Enable forwarding
     sed -i '/net.ipv4.ip_forward/ s/^#//' /etc/sysctl.conf
-    sysctl -p /etc/sysctl.conf 1>/dev/null
+    sysctl -p /etc/sysctl.conf 1>&9
 
     # Add iptables rule...
     if ! iptables -t nat -nvL PREROUTING | grep -q 4000; then
@@ -216,7 +216,7 @@ function setup_iptables {
     # ...and make persistent
     echo iptables-persistent iptables-persistent/autosave_v4 select true | debconf-set-selections
     echo iptables-persistent iptables-persistent/autosave_v6 select true | debconf-set-selections
-    run_twice apt-get -y install iptables-persistent 1>/dev/null
+    run_twice apt-get -y install iptables-persistent 1>&9
 }
 
 function get_chef_qcow {
@@ -324,19 +324,19 @@ EOF
     # Remove existing image if any
     do_substatus 40 "Removing the existing chef-server" "chef-server"
     if virsh list | grep -q chef-server; then
-        virsh destroy chef-server 1>/dev/null
+        virsh destroy chef-server 1>&9
     fi
 
     # Un-Define image and kick it
     do_substatus 50 "Undefining the existing chef-server" "chef-server"
     if virsh list --all | grep -q chef-server; then
-        virsh undefine chef-server 1>/dev/null
+        virsh undefine chef-server 1>&9
     fi
 
     # Define image and kick it
     do_substatus 60 "Creating the existing chef-server" "chef-server"
-    virsh define /opt/rpcs/chef-server.xml 1>/dev/null
-    virsh autostart chef-server 1>/dev/null
+    virsh define /opt/rpcs/chef-server.xml 1>&9
+    virsh autostart chef-server 1>&9
 
     do_substatus_close
 }
@@ -365,7 +365,7 @@ function generate_and_copy_ssh_keys {
 EOF
 
     do_substatus 20 "Copying new key in ..." "ssh-keys"
-    sshpass -p demo ssh-copy-id -i .ssh/id_rsa.pub rack@$chef 1>/dev/null
+    sshpass -p demo ssh-copy-id -i .ssh/id_rsa.pub rack@$chef 1>&9
 
     do_substatus 30 "Setting new password ..." "ssh-keys"
     ssh rack@$chef "sudo chpasswd" <<< "rack:$(pwgen -s 12 1)"
@@ -398,7 +398,7 @@ function initialize_submodules() {
     OLD_IFS=$IFS
     while read line; do
         count=$(($count + 1))
-    done < <(git submodule init 2>/dev/null)
+    done < <(git submodule init 2>&9)
     do_substatus_close
     total_cookbooks=$count
 }
@@ -409,13 +409,13 @@ function update_submodules() {
     OLD_IFS=$IFS
     IFS="'"
     local count=0
-    git submodule update 2>/dev/null | tee >(while read line; do
+    git submodule update 2>&9 | tee >(while read line; do
         if [[ "$line" == Cloning* ]]; then
             count=$(($count + 1))
             submod_cookbook=$(echo $line | awk '{print $3}' | sed 's/^cookbooks\///g')
             do_substatus $(get_float $count $total_cookbooks) "Checking out cookbook $submod_cookbook" "update"
         fi
-    done) 1>/dev/null
+    done) 1>&9
     result=$?
     IFS=$OLD_IFS
     do_substatus_close
@@ -425,13 +425,13 @@ function update_submodules() {
 
 function download_cookbooks {
     # grab cookbooks
-    apt-get install -y git 1>/dev/null
+    apt-get install -y git 1>&9
 
     pushd /root
     if [ ! -e /opt/rpcs/cookbooks ]; then
-        run_twice git clone http://github.com/rcbops/chef-cookbooks /opt/rpcs/chef-cookbooks 1>/dev/null
+        run_twice git clone http://github.com/rcbops/chef-cookbooks /opt/rpcs/chef-cookbooks 1>&9
         cd /opt/rpcs/chef-cookbooks
-        run_twice git checkout iso 1>/dev/null
+        run_twice git checkout iso 1>&9
 
         run_twice "initialize_submodules"
 
@@ -448,7 +448,7 @@ function upload_roles_to_chef() {
         count=$(($count + 1))
         role_name=$(echo $line | awk '{print $3}' | sed 's/\!//g')
         do_substatus $(get_float $count $role_count) "Uploading role $role_name to chef" "upload"
-    done) 1>/dev/null
+    done) 1>&9
     result=$?
     do_substatus_close
     set +o pipefail
@@ -465,7 +465,7 @@ function upload_cookbooks_to_chef() {
             cookbook_name=$(echo $line | awk '{print $2}' | sed 's/\!//g')
             do_substatus $(get_float $count $cookbook_count) "Uploading cookbook $cookbook_name to chef" "upload"
         fi
-    done) 1>/dev/null
+    done) 1>&9
     result=$?
     do_substatus_close
     set +o pipefail
@@ -630,8 +630,8 @@ function add_eula() {
 
 function apt_it_up() {
     do_substatus 33 "running apt-get update" "apt"
-    run_twice apt-get update 1>/dev/null
+    run_twice apt-get update 1>&9
     do_substatus 66 "running apt-get upgrade" "apt"
-    run_twice apt-get -y upgrade 1>/dev/null
+    run_twice apt-get -y upgrade 1>&9
     do_substatus_close
 }
