@@ -42,10 +42,19 @@ OPTIONS
 Optional:
 
 * export FLAVOR="FULL" or "MINIMAL"; defaults to "FULL"
+  - The FULL flavor ISO bundles everything into the .ISO file:
+    * Chef Server VM (1GB)
+    * Chef Omnibus installer (17MB)
+    * Ubuntu Precise 12.04 LTS image (17MB)
+    * Cirros Linux image (7MB)
+  - The MINIMAL flavor ISO bundles nothing. This will require the post-installer to download them on the fly.
 
 USING
 =====
 
+When you run the builder for the first time, it will need to download one or more large files, depending on the flavor you choose (See Options section above). At the very least, the Ubuntu 12.04 LTS Server ISO (684MB) will be downloaded to use as the basis of the Alamo ISO.
+
 * Run ./build.sh
 * Get a cup of coffee
-* Booten Sie Eizo!
+* Booten Sie Eizo! (located in the "./iso" directory, symlinked to "./iso/rpcs-${FLAVOR}.iso" after build) 
+* Remember the Alamo!
