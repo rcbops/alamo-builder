@@ -6,7 +6,7 @@ Alamo-builder is a system for building an ISO to install Rackspace Private Cloud
 PLATFORMS
 =========
 
-The build script supports Debian (and most Debian-based platforms, such as Ubuntu) and OSX as build platforms. The platform-specific notes are as follows:
+The build script supports Debian, most Debian-based platforms (such as Ubuntu) and OSX as build platforms. The platform-specific notes are as follows:
 
 Debian
 ------
