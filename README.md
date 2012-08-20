@@ -56,5 +56,5 @@ When you run the builder for the first time, it will need to download one or mor
 
 * Run ./build.sh
 * Get a cup of coffee
-* Booten Sie Eizo! (located in the "./iso" directory, symlinked to "./iso/rpcs-${FLAVOR}.iso" after build) 
+* Booten Sie Eizo! (located in the "./iso" directory, symlinked to "./iso/rpcs-${FLAVOR}.iso" after build)
 * Remember the Alamo!
