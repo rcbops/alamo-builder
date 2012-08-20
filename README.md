@@ -44,12 +44,12 @@ Flavor
 
 export FLAVOR="FULL" or "MINIMAL"; defaults to "FULL"
 
-* The FULL flavor ISO bundles everything into the .ISO file:
+* The FULL flavor ISO bundles all the large dependencies into the .ISO file:
   * Chef Server VM (1GB)
   * Chef Omnibus installer (17MB)
   * Ubuntu Precise 12.04 LTS image (17MB)
   * Cirros Linux image (7MB)
-* The MINIMAL flavor ISO bundles nothing. This will require the post-installer to download them on the fly.
+* The MINIMAL flavor ISO bundles nothing. This will require the post-installer to download dependencies on the fly.
 
 USING
 =====
@@ -59,4 +59,4 @@ When you run the builder for the first time, it will need to download one or mor
 * Run ./build.sh
 * Get a cup of coffee
 * Booten Sie Eizo! (located in the "./iso" directory, symlinked to "./iso/rpcs-${FLAVOR}.iso" after build)
-* Remember the Alamo!
+* Remember the Alamo! (feel the pride)
