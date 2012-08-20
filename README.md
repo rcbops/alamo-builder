@@ -42,12 +42,12 @@ OPTIONS
 Optional:
 
 * export FLAVOR="FULL" or "MINIMAL"; defaults to "FULL"
-  - The FULL flavor ISO bundles everything into the .ISO file:
-    * Chef Server VM (1GB)
-    * Chef Omnibus installer (17MB)
-    * Ubuntu Precise 12.04 LTS image (17MB)
-    * Cirros Linux image (7MB)
-  - The MINIMAL flavor ISO bundles nothing. This will require the post-installer to download them on the fly.
+  * The FULL flavor ISO bundles everything into the .ISO file:
+    - Chef Server VM (1GB)
+    - Chef Omnibus installer (17MB)
+    - Ubuntu Precise 12.04 LTS image (17MB)
+    - Cirros Linux image (7MB)
+  * The MINIMAL flavor ISO bundles nothing. This will require the post-installer to download them on the fly.
 
 USING
 =====
