@@ -1,46 +1,67 @@
 Rackspace Private Cloud Software
 License Agreement
-The Rackspace Private Cloud Software (the “Software”) is a compilation comprised of various
-components that are available under various open source licenses.  The Software is an Ubuntu based
-distribution and includes Chef Server, the Chef Omnibus Installer, the Rackspace Chef Cookbooks,
-various OpenStack components, and the Debian Squeeze installer.   Your use of the Software
-compilation is subject to the terms of: (i) the applicable open source licenses identified at the following
-url and incorporated in this License Agreement by reference: www.rackspace.com/information/legal/rpcswpackages/,
-and (ii) the terms of this License Agreement, but only to the extent that the terms of this License Agreement
-do not conflict with the applicable open source license(s).
+The Rackspace Private Cloud Software (the “Software”) is a compilation of
+several open source components, designed to provide an approachable and ready
+to go Open Stack configuration experience.  The Software is an Ubuntu based
+distribution and includes Chef Server, the Chef Omnibus Installer, the
+Rackspace Chef Cookbooks, various OpenStack components, and the Ubuntu Precise
+installer.   Your use of the Software compilation is subject to the terms of:
+(i) the applicable open source licenses identified at the following url and
+incorporated in this License Agreement by reference:
+www.rackspace.com/information/legal/rpcswpackages/, because we have included
+open source software as part of this compilation, please be sure to review and
+respect the licenses governing your use of those components, and (ii) the terms
+of this License Agreement, but only to the extent that the terms of this
+License Agreement do not conflict with the open source license(s) that apply to
+the included components.
 
-This License Agreement restricts your use and distribution of the Software compilation, but it does 
-prohibit the use and distribution or use of the underlying software included in the compilation. That 
-software and the underlying source code is governed by the various licenses agreements applicable to 
-those components.
+This License Agreement restricts your use and distribution of the Software
+compilation, but it does not prohibit the use or distribution of the underlying
+software included in the compilation. Those software components and their
+source code are governed by the various licenses agreements applicable to those
+components.  We put a lot of work into this Software but we do not control or
+seek to limit your ability to use the open source software included in our
+compilation.
 
-You are hereby licensed to use the Software compilation without charge, on a worldwide, non-exclusive, 
-basis, provided that you may not redistribute or modify the Software compilation unless pursuant to a 
-separate written agreement with Rackspace US, Inc (“Rackspace”). You may not use the Rackspace Private
-Cloud Software name or trademark without the express written permission of Rackspace This license shall
-continue until revoked by Rackspace, with or without cause, on written notice to you. On receipt of
-notice of termination, you may not further use the Software compilation.
+You are hereby licensed to use the Software compilation without charge, on a
+worldwide, non-exclusive, basis.  We do want to maintain a consistent user
+experience and seek to connect with users of this Software, so you may not
+redistribute or modify the Software compilation unless pursuant to a separate
+written agreement with Rackspace US, Inc (“Rackspace”).   You may not use the
+Rackspace Private Cloud Software name or trademark without the express written
+permission of Rackspace. If we decide we are required (either for cause or
+because of an agreement relating to the software components included in the
+compilation) to stop permitting the use of this Software, then we may revoke
+this license by providing you with written notice. If we notify you that we
+have revoked this license, then you may no longer use the Software for new
+installations (but may continue your use of any software installed as part of
+the compilation in accordance with the terms applicable to that software).
 
-Your use of the Software and its included components is subject to applicable laws, including the export 
-laws of the United States and any other jurisdiction where the Software is distributed.
+Your use of the Software and its included components is subject to applicable
+laws, including the export laws of the United States and any other jurisdiction
+where the Software is distributed.
 
-The Software is provided on an AS IS basis and  Rackspace US, Inc. makes no representation or warranty 
-of any kind regarding the Software,  either express or implied, and specifically disclaims the  warranties 
-of merchantability, fitness for a particular purpose, and noninfringement.  You are solely responsible for 
-your use of the Software and assume any and all risks associated with your use or redistribution of the 
-Software, including your compliance with applicable licenses.
+The Software is provided on an AS IS basis and  Rackspace US, Inc. makes no
+representation or warranty of any kind regarding the Software,  either express
+or implied, and specifically disclaims the  warranties of merchantability,
+fitness for a particular purpose, and noninfringement.  You are solely
+responsible for your use of the Software and assume any and all risks
+associated with your use or redistribution of the Software, including your
+compliance with applicable licenses.
 
-Trademarks:  You may not remove or modify any trademarks included with the Software compilation.  
-OpenStack is a trademark of OpenStack, LLC (to be assigned to the OpenStack Foundation).  Ubuntu and 
-Canonical are registered trademarks of Canoncial Ltd.   OpsCode, the OpsCode logos and Chef are 
-trademarks of OpsCode, Inc.  Rackspace, Rackspace Private Cloud Software, and Rackspace logos are 
-either registered trademarks or trademarks of Rackspace U.S., Inc. in the United States and/or other 
-countries.  Other trademarks included in or distributed with the Software compilation are the property 
-of their respective owners.
+Trademarks:  You may not remove or modify any trademarks included with the
+Software compilation.  OpenStack is a trademark of OpenStack, LLC (to be
+assigned to the OpenStack Foundation).  Ubuntu and Canonical are registered
+trademarks of Canoncial Ltd.   OpsCode, the OpsCode logos and Chef are
+trademarks of OpsCode, Inc.  Rackspace, Rackspace Private Cloud Software, and
+Rackspace logos are either registered trademarks or trademarks of Rackspace
+U.S., Inc. in the United States and/or other countries.  Other trademarks
+included in or distributed with the Software compilation are the property of
+their respective owners.
 
 All rights not expressly granted in this License Agreement are reserved.
 
-This License Agreement shall be governed by the laws of the State of Texas, exclusive of any choice of 
-law principle that would require the application of the law of a different jurisdiction, and the laws of the 
-United States of America, as applicable. 
-
+This License Agreement shall be governed by the laws of the State of Texas,
+exclusive of any choice of law principle that would require the application of
+the law of a different jurisdiction, and the laws of the United States of
+America, as applicable.
