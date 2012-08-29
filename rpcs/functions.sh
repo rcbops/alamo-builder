@@ -525,10 +525,6 @@ function create_environment_json() {
       }
     },
     "glance": {
-      "image" : {
-        "precise" : "%precise_url",
-        "cirros" : "%cirros_url"
-      },
       "images": [
         "cirros",
         "precise"

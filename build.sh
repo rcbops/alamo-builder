@@ -51,10 +51,6 @@ CHEF_IMAGE_URL="http://${CHEF_IMAGE_HOST}/${CHEF_IMAGE_NAME}"
 ISO_URL="http://releases.ubuntu.com/precise/ubuntu-12.04-server-amd64.iso"
 ISO_MD5="f2e921788d35bbdf0336d05d228136eb"
 ISO_CUSTOM="rpcs-pridery.iso"
-CIRROS_IMAGE_NAME="cirros-0.3.0-x86_64-uec.tar.gz"
-CIRROS_URL="https://launchpadlibrarian.net/83305869/${CIRROS_IMAGE_NAME}"
-PRECISE_IMAGE_NAME="precise-server-cloudimg-amd64.tar.gz"
-PRECISE_URL="http://cloud-images.ubuntu.com/precise/current/${PRECISE_IMAGE_NAME}"
 
 # location, location, location
 FOLDER_BASE=$(pwd)
@@ -91,23 +87,11 @@ mkdir -p "$FOLDER_ISO_INITRD"
 ISO_FILENAME="${FOLDER_RESOURCES}/$(basename $ISO_URL)"
 CHEF_FILENAME="${FOLDER_RESOURCES}/${CHEF_IMAGE_NAME}"
 CHEF_DEB_FILENAME="${FOLDER_RESOURCES}/chef-full.deb"
-PRECISE_FILENAME="${FOLDER_RESOURCES}/${PRECISE_IMAGE_NAME}"
-CIRROS_FILENAME="${FOLDER_RESOURCES}/${CIRROS_IMAGE_NAME}"
 
 # download the chef-server image
 if [ ! -e "${CHEF_FILENAME}.pristine" ] && [ "${FLAVOR}" = "FULL" ]; then
   echo "Downloading ${CHEF_IMAGE_URL} ..."
   curl --output "${CHEF_FILENAME}.pristine" -L "${CHEF_IMAGE_URL}"
-fi
-
-if [ ! -e "${PRECISE_FILENAME}" ] && [ "${FLAVOR}" = "FULL" ]; then
-  echo "Downloading Precise Image ..."
-  curl --output "${PRECISE_FILENAME}" -L "${PRECISE_URL}"
-fi
-
-if [ ! -e "${CIRROS_FILENAME}" ] && [ "${FLAVOR}" = "FULL" ]; then
-  echo "Downloading Cirros Image ..."
-  curl --output "${CIRROS_FILENAME}" -L "${CIRROS_URL}"
 fi
 
 # download the Chef Omnibus installer
@@ -176,22 +160,6 @@ if [ -e "${CHEF_FILENAME}.pristine" ] && [ "${FLAVOR}" = "FULL" ]; then
     cp "${CHEF_FILENAME}.pristine" "${FOLDER_ISO_CUSTOM_RPCS}/resources/"
 fi
 
-if [ -e "${PRECISE_FILENAME}" ] && [ "${FLAVOR}" = "FULL" ]; then
-    echo "Embedding the precise image ..."
-    cp "${PRECISE_FILENAME}" "${FOLDER_ISO_CUSTOM_RPCS}/resources/"
-    echo "precise_url=\"file:///opt/rpcs/precise-server-cloudimg-amd64.tar.gz\"" >> ${FOLDER_ISO_CUSTOM_RPCS}/rpcs.cfg
-else
-    echo "precise_url=\"$PRECISE_URL\"" >> ${FOLDER_ISO_CUSTOM_RPCS}/rpcs.cfg
-fi
-
-if [ -e "${CIRROS_FILENAME}" ] && [ "${FLAVOR}" = "FULL" ]; then
-    echo "Embedding the cirros image ..."
-    cp "${CIRROS_FILENAME}" "${FOLDER_ISO_CUSTOM_RPCS}/resources/"
-    echo "cirros_url=\"file:///opt/rpcs/cirros-0.3.0-x86_64-uec.tar.gz\"" >> ${FOLDER_ISO_CUSTOM_RPCS}/rpcs.cfg
-else
-    echo "cirros_url=\"$CIRROS_URL\"" >> ${FOLDER_ISO_CUSTOM_RPCS}/rpcs.cfg
-fi
-
 # and the chef installer
 if [ -e "${CHEF_DEB_FILENAME}" ] && [ "${FLAVOR}" = "FULL" ]; then
     echo "Embedding the Chef Omnibus installer ..."
@@ -209,6 +177,7 @@ cp "${FOLDER_BASE}/rpcs/status.sh" "$FOLDER_ISO_CUSTOM_RPCS/"
 cp "${FOLDER_BASE}/rpcs/status.rb" "$FOLDER_ISO_CUSTOM_RPCS/"
 cp "${FOLDER_BASE}/version.cfg" "$FOLDER_ISO_CUSTOM_RPCS/"
 cp "${FOLDER_BASE}/rpcs/RPCS_EULA.txt" "$FOLDER_ISO_CUSTOM_RPCS/"
+cp "${FOLDER_BASE}/rpcs/RELNOTES.txt" "$FOLDER_ISO_CUSTOM_RPCS/"
 
 echo "Adding boot branding..."
 chmod u+w "$FOLDER_ISO_CUSTOM"

@@ -1,0 +1,14 @@
+Rackspace Private Cloud Software (Alamo)
+
+Version 1.0.2:
+    * Updated chef environment to move apply_patches to osops namespace
+    * Remove prepackaged images.  They are now added to glance as external
+      URLs.
+    * Updated glance cookbook
+    * Updated swift cookbook
+    * Updated osops-utils cookbook
+    * Updated nova-scheduler patch to apply to nova-scheduler-2012.1+stable~20120612-3ee026e-0ubuntu1.3
+    * Added swift-dispersion-populate and swift-dispersion-report hot patches to ubuntu packages
+
+Version 1.0.1:
+    * Initial Release
