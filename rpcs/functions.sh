@@ -614,9 +614,9 @@ function run_chef() {
 
 function setup_chef_initscripts() {
     echo "setting up chef-client init scripts..."
-    cp /opt/chef/embedded/lib/ruby/gems/1.9.1/gems/chef-10.12.0/distro/debian/etc/init/chef-client.conf /etc/init/chef.conf
-    cp /opt/chef/embedded/lib/ruby/gems/1.9.1/gems/chef-10.12.0/distro/debian/etc/default/chef-client /etc/default/chef-client
-    cp /opt/chef/embedded/lib/ruby/gems/1.9.1/gems/chef-10.12.0/distro/debian/etc/init.d/chef-client /etc/init.d/chef-client
+    cp `find /opt/chef/embedded -print | grep "debian.*init/chef-client.conf"` /etc/init/chef.conf
+    cp `find /opt/chef/embedded -print | grep "debian.*default/chef-client"` /etc/default/chef-client
+    cp `find /opt/chef/embedded -print | grep "debian.*init.d/chef-client"` /etc/init.d/chef-client
     mkdir -p /var/log/chef
     /etc/init.d/chef-client start
 }
