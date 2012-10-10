@@ -202,9 +202,9 @@ fi
 echo "Add extra files ..."
 chmod u+w "$FOLDER_ISO_CUSTOM"
 cp "${FOLDER_BASE}/rpcs/late_command.sh" "$FOLDER_ISO_CUSTOM_RPCS/"
-sed -e "s/@CHEF_IMAGE_HOST@/${CHEF_IMAGE_HOST}/" "${FOLDER_BASE}/rpcs/post-install.sh" > ${FOLDER_BASE}/rpcs/post-install.sh.templated
-cp "${FOLDER_BASE}/rpcs/post-install.sh.templated" "$FOLDER_ISO_CUSTOM_RPCS/post-install.sh"
-cp "${FOLDER_BASE}/rpcs/functions.sh" "$FOLDER_ISO_CUSTOM_RPCS/functions.sh"
+sed -e "s/@CHEF_IMAGE_HOST@/${CHEF_IMAGE_HOST}/" "${FOLDER_BASE}/rpcs/functions.sh" > ${FOLDER_BASE}/rpcs/functions.sh.templated
+mv "${FOLDER_BASE}/rpcs/functions.sh.templated" "$FOLDER_ISO_CUSTOM_RPCS/functions.sh"
+cp "${FOLDER_BASE}/rpcs/post-install.sh" "$FOLDER_ISO_CUSTOM_RPCS/post-install.sh"
 cp "${FOLDER_BASE}/rpcs/status.sh" "$FOLDER_ISO_CUSTOM_RPCS/"
 cp "${FOLDER_BASE}/rpcs/status.rb" "$FOLDER_ISO_CUSTOM_RPCS/"
 cp "${FOLDER_BASE}/version.cfg" "$FOLDER_ISO_CUSTOM_RPCS/"
