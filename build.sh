@@ -25,7 +25,7 @@ else
     MINORVER=${RELEASE}
 fi
 
-MAJORVER="1.0.1"
+MAJORVER="2.0.0"
 CODENAME="chaka"
 
 if ! git diff-index --quiet HEAD; then
