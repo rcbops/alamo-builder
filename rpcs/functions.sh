@@ -614,11 +614,11 @@ function run_chef() {
 
 function setup_chef_initscripts() {
     echo "setting up chef-client init scripts..."
-    cp `find /opt/chef/embedded -print | grep "debian.*init/chef-client.conf"` /etc/init/chef.conf
-    cp `find /opt/chef/embedded -print | grep "debian.*default/chef-client"` /etc/default/chef-client
-    cp `find /opt/chef/embedded -print | grep "debian.*init.d/chef-client"` /etc/init.d/chef-client
+    cp `find /opt/chef/embedded -print | grep "debian.*init/chef-client.conf" | head -n1` /etc/init/chef.conf
+    cp `find /opt/chef/embedded -print | grep "debian.*default/chef-client" | head -n 1` /etc/default/chef-client
     mkdir -p /var/log/chef
     /etc/init.d/chef-client start
+    /usr/sbin/update-rc.d chef-client defaults
 }
 
 function add_eula() {
