@@ -578,8 +578,16 @@ function assign_roles() {
     if [ $role = "All-In-One" ]; then
         knife node run_list add $fqdn "role[single-controller]"
         knife node run_list add $fqdn "role[single-compute]"
+        knife node run_list add $fqdn "role[collectd-client]"
+        knife node run_list add $fqdn "role[collectd-server]"
+        knife node run_list add $fqdn "role[graphite]"
     else
         knife node run_list add $fqdn "role[single-${role,,}]"
+        knife node run_list add $fqdn "role[collectd-client]"
+        if [ $role = "compute" ]; then
+            knife node run_list add $fqdn "role[collectd-server]"
+            knife node run_list add $fqdn "role[graphite]"
+        fi
     fi
 }
 
