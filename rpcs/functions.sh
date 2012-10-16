@@ -504,7 +504,10 @@ function create_environment_json() {
   },
   "override_attributes": {
     "developer_mode": false,
-    "monitoring" : { "procmon_provider" : "none" },
+    "monitoring" : {
+      "procmon_provider" : "monit",
+      "metric_provider" : "collectd"
+    },
     "keystone" : {
       "tenants" : [ "admin", "service", "%os_user_name" ],
       "admin_user" : "admin",
