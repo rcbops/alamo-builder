@@ -1,7 +1,7 @@
-Package: pingcheck
+Package: proxy-check
 Status: install ok unpacked
 Version: 0.1-1
 Depends: cdebconf-udeb
-Description: RPCS-pingcheck
-Installer-Menu-Item: 1849
+Description: RPCS-proxy-check
+Installer-Menu-Item: 7299
 

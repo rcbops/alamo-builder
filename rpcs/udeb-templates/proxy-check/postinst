@@ -3,10 +3,19 @@
 # Source debconf library.
 . /usr/share/debconf/confmodule
 
-db_progress START 0 1 pingcheck/note
+db_progress START 0 1 proxy-check/note
+
+db_get mirror/http/proxy && [ -n "$RET" ];
+if db_get mirror/http/proxy && [ -n "$RET" ]; then
+    export http_proxy=$RET
+    echo "export http_proxy=$RET" >> /tmp/rpcs.cfg
+    echo "export HTTP_PROXY=$RET" >> /tmp/rpcs.cfg
+else
+    echo "#http_proxy=notdefined" >> /tmp/rpcs.cfg
+fi
 
 if ! wget -q -O /dev/null http://www.google.com; then
-    db_input critical pingcheck/error || true
+    db_input critical proxy-check/error || true
     db_go
 else
     db_progress STEP 1
