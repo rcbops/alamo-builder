@@ -106,6 +106,8 @@ if [ $role = "Controller" ] || [ $role = "All-In-One" ]; then
     run_twice "upload_cookbooks_to_chef"
 fi
 
+set_chef_proxy
+
 do_status 90 "Getting the validation certificate"
 get_validation_pem
 
