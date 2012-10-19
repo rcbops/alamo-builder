@@ -15,14 +15,14 @@ function get_float() {
 }
 
 function set_git_proxy() {
-    if [ -n ${http_proxy} ]; then
+    if [ -n "${http_proxy}" ]; then
         HOME=/root git config --global http.proxy ${http_proxy} || :
         git_string="-c http.proxy=${http_proxy}"
     fi
 }
 
 function set_chef_proxy() {
-    if [ -n ${http_proxy} ]; then
+    if [ -n "${http_proxy}" ]; then
         echo "http_proxy \"${http_proxy}\"" >> /etc/chef/client.rb
         echo "no_proxy \"169.254.*\"" >> /etc/chef/client.rb
     fi
