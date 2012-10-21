@@ -43,7 +43,7 @@ codename=${CODENAME}
 EOF
 
 PRIDE="${CODENAME}-v${MAJORVER}-${MINORVER}"
-UDEB_NAME="rpcs-pre rpcs-post kvmcheck pingcheck eula"
+UDEB_NAME="rpcs-pre rpcs-post kvmcheck proxy-check eula"
 
 CHEF_IMAGE_NAME="chef-server.qcow2"
 CHEF_IMAGE_HOST=${CHEF_IMAGE_HOST:-c390813.r13.cf1.rackcdn.com}
