@@ -1,12 +1,12 @@
-Template: debian-installer/pingcheck/title
+Template: debian-installer/proxy-check/title
 Type: text
-Description: RPCS-pingcheck
+Description: RPCS-proxy-check
 
-Template: pingcheck/note
+Template: proxy-check/note
 Type: text
 Description: Checking for network connectivity
 
-Template: pingcheck/error
+Template: proxy-check/error
 Type: error
 Description: Cannot verify network connectivity
  We cannot verify that you are connected to the internet. The
