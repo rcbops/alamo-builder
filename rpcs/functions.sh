@@ -576,7 +576,7 @@ function create_environment_json() {
       "nova": "%net_nova",
       "public": "%net_public"
     },
-    "enable_monit": true
+    "package_component": "folsom"
   }
 }
 EOF
