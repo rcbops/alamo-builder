@@ -442,8 +442,7 @@ function download_cookbooks {
 
     pushd /root
     if [ ! -e /opt/rpcs/cookbooks ]; then
-        #run_twice git ${git_string} clone http://github.com/rcbops/chef-cookbooks /opt/rpcs/chef-cookbooks 1>&9
-        run_twice git ${git_string} clone http://github.com/rackerjoe/chef-cookbooks /opt/rpcs/chef-cookbooks 1>&9
+        run_twice git ${git_string} clone http://github.com/rcbops/chef-cookbooks /opt/rpcs/chef-cookbooks 1>&9
         cd /opt/rpcs/chef-cookbooks
         run_twice git ${git_string} checkout iso 1>&9
 
