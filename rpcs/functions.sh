@@ -576,6 +576,7 @@ function create_environment_json() {
       "nova": "%net_nova",
       "public": "%net_public"
     },
+    "horizon": { "theme": "Rackspace" },
     "package_component": "folsom"
   }
 }
