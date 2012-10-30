@@ -576,7 +576,8 @@ function create_environment_json() {
       "nova": "%net_nova",
       "public": "%net_public"
     },
-    "enable_monit": true
+    "horizon": { "theme": "Rackspace" },
+    "package_component": "folsom"
   }
 }
 EOF
@@ -601,7 +602,7 @@ function assign_roles() {
     else
         knife node run_list add $fqdn "role[single-${role,,}]"
         knife node run_list add $fqdn "role[collectd-client]"
-        if [ $role = "controller" ]; then
+        if [ $role = "Controller" ]; then
             knife node run_list add $fqdn "role[collectd-server]"
             knife node run_list add $fqdn "role[graphite]"
         fi
