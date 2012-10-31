@@ -26,7 +26,7 @@ else
 fi
 
 MAJORVER="2.0.0"
-CODENAME="chaka"
+CODENAME="zarn"
 
 if ! git diff-index --quiet HEAD; then
     if [ "${RELEASE:-}" != "" ]; then
