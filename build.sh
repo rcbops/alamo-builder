@@ -118,7 +118,7 @@ fi
 
 # download the installation disk if we haven't already or it is corrupted somehow
 if [ -e "$ISO_FILENAME" ]; then
-  if [[ "$PLATFORM" = "osx" ]] && [[ $(md5 -q "$ISO_FILENAME") = "$ISO_MD5" ]] || [ $ISO_MD5 != `md5sum $ISO_FILENAME | cut -d ' ' -f1` ]; then
+  if [[ "$PLATFORM" = "osx" && $(md5 -q "$ISO_FILENAME") != "$ISO_MD5" ]] || [[ "$PLATFORM" != "osx" && $ISO_MD5 != `md5sum $ISO_FILENAME | cut -d ' ' -f1` ]]; then
     echo "Removing bad iso"
     rm "$ISO_FILENAME"
   fi
