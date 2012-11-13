@@ -25,8 +25,8 @@ else
     MINORVER=${RELEASE}
 fi
 
-MAJORVER="1.0.1"
-CODENAME="chaka"
+MAJORVER="2.0.0"
+CODENAME="zarn"
 
 if ! git diff-index --quiet HEAD; then
     if [ "${RELEASE:-}" != "" ]; then
@@ -43,7 +43,7 @@ codename=${CODENAME}
 EOF
 
 PRIDE="${CODENAME}-v${MAJORVER}-${MINORVER}"
-UDEB_NAME="rpcs-pre rpcs-post kvmcheck pingcheck eula"
+UDEB_NAME="rpcs-pre rpcs-post kvmcheck proxy-check eula"
 
 CHEF_IMAGE_NAME="chef-server.qcow2"
 CHEF_IMAGE_HOST=${CHEF_IMAGE_HOST:-c390813.r13.cf1.rackcdn.com}
@@ -117,6 +117,12 @@ if [ ! -e "${CHEF_DEB_FILENAME}" ] && [ "${FLAVOR}" = "FULL" ]; then
 fi
 
 # download the installation disk if we haven't already or it is corrupted somehow
+if [ -e "$ISO_FILENAME" ]; then
+  if [[ "$PLATFORM" = "osx" && $(md5 -q "$ISO_FILENAME") != "$ISO_MD5" ]] || [[ "$PLATFORM" != "osx" && $ISO_MD5 != `md5sum $ISO_FILENAME | cut -d ' ' -f1` ]]; then
+    echo "Removing bad iso"
+    rm "$ISO_FILENAME"
+  fi
+fi  
 if [ ! -e "$ISO_FILENAME" ]; then
   echo "Downloading $(basename $ISO_URL) ..."
   curl --output "$ISO_FILENAME" -L "$ISO_URL"

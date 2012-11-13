@@ -1,4 +1,5 @@
 date_string="%a, %d %b %Y %X %z"
+git_string=""
 
 # return the integer part of a float
 function get_float() {
@@ -11,6 +12,20 @@ function get_float() {
     result=$((($numerator*100)/$denominator))
     echo $result
   fi
+}
+
+function set_git_proxy() {
+    if [ -n "${http_proxy}" ]; then
+        HOME=/root git config --global http.proxy ${http_proxy} || :
+        git_string="-c http.proxy=${http_proxy}"
+    fi
+}
+
+function set_chef_proxy() {
+    if [ -n "${http_proxy}" ]; then
+        echo "http_proxy \"${http_proxy}\"" >> /etc/chef/client.rb
+        echo "no_proxy \"169.254.*\"" >> /etc/chef/client.rb
+    fi
 }
 
 function find_in_array() {
@@ -395,10 +410,9 @@ function generate_chef_keys {
 function initialize_submodules() {
     do_status 81 "Initializing Sub Modules"
     local count=0
-    OLD_IFS=$IFS
     while read line; do
         count=$(($count + 1))
-    done < <(git submodule init 2>&9)
+    done < <(git ${git_string} submodule init 2>&9)
     do_substatus_close
     total_cookbooks=$count
 }
@@ -406,10 +420,8 @@ function initialize_submodules() {
 function update_submodules() {
     set -o pipefail
     do_status 82 "Updating Sub Modules"
-    OLD_IFS=$IFS
-    IFS="'"
     local count=0
-    git submodule update 2>&9 | tee >(while read line; do
+    git ${git_string} submodule update 2>&9 | tee >(while read line; do
         if [[ "$line" == Cloning* ]]; then
             count=$(($count + 1))
             submod_cookbook=$(echo $line | awk '{print $3}' | sed 's/^cookbooks\///g')
@@ -417,7 +429,6 @@ function update_submodules() {
         fi
     done) 1>&9
     result=$?
-    IFS=$OLD_IFS
     do_substatus_close
     set +o pipefail
     return $result
@@ -427,11 +438,13 @@ function download_cookbooks {
     # grab cookbooks
     apt-get install -y git 1>&9
 
+    set_git_proxy
+
     pushd /root
     if [ ! -e /opt/rpcs/cookbooks ]; then
-        run_twice git clone http://github.com/rcbops/chef-cookbooks /opt/rpcs/chef-cookbooks 1>&9
+        run_twice git ${git_string} clone http://github.com/rcbops/chef-cookbooks /opt/rpcs/chef-cookbooks 1>&9
         cd /opt/rpcs/chef-cookbooks
-        run_twice git checkout iso 1>&9
+        run_twice git ${git_string} checkout iso 1>&9
 
         run_twice "initialize_submodules"
 
@@ -474,7 +487,7 @@ function upload_cookbooks_to_chef() {
 
 function get_validation_pem() {
     echo "Grabbing validation.pem from chef-server ..."
-    wget -nv http://${chef}:4000/validation.pem -O /etc/chef/validation.pem
+    wget --no-proxy -nv http://${chef}:4000/validation.pem -O /etc/chef/validation.pem
 }
 
 function commafy {
@@ -504,7 +517,10 @@ function create_environment_json() {
   },
   "override_attributes": {
     "developer_mode": false,
-    "monitoring" : { "procmon_provider" : "none" },
+    "monitoring" : {
+      "procmon_provider" : "monit",
+      "metric_provider" : "collectd"
+    },
     "keystone" : {
       "tenants" : [ "admin", "service", "%os_user_name" ],
       "admin_user" : "admin",
@@ -559,7 +575,8 @@ function create_environment_json() {
       "nova": "%net_nova",
       "public": "%net_public"
     },
-    "enable_monit": true
+    "horizon": { "theme": "Rackspace" },
+    "package_component": "folsom"
   }
 }
 EOF
@@ -578,8 +595,16 @@ function assign_roles() {
     if [ $role = "All-In-One" ]; then
         knife node run_list add $fqdn "role[single-controller]"
         knife node run_list add $fqdn "role[single-compute]"
+        knife node run_list add $fqdn "role[collectd-client]"
+        knife node run_list add $fqdn "role[collectd-server]"
+        knife node run_list add $fqdn "role[graphite]"
     else
         knife node run_list add $fqdn "role[single-${role,,}]"
+        knife node run_list add $fqdn "role[collectd-client]"
+        if [ $role = "Controller" ]; then
+            knife node run_list add $fqdn "role[collectd-server]"
+            knife node run_list add $fqdn "role[graphite]"
+        fi
     fi
 }
 
@@ -606,7 +631,6 @@ function run_chef() {
     done)
 
     result=$?
-    IFS=$OLD_IFS
     do_substatus_close
     set +o pipefail
     return $result
@@ -614,9 +638,10 @@ function run_chef() {
 
 function setup_chef_initscripts() {
     echo "setting up chef-client init scripts..."
-    cp `find /opt/chef/embedded -print | grep "debian.*init/chef-client.conf"` /etc/init/chef.conf
-    cp `find /opt/chef/embedded -print | grep "debian.*default/chef-client"` /etc/default/chef-client
-    cp `find /opt/chef/embedded -print | grep "debian.*init.d/chef-client"` /etc/init.d/chef-client
+    cp `find /opt/chef/embedded -print | grep "debian.*init/chef-client.conf" | head -n1` /etc/init/chef-client.conf
+    cp `find /opt/chef/embedded -print | grep "debian.*default/chef-client" | head -n1` /etc/default/chef-client
+    ln -s /lib/init/upstart-job /etc/init.d/chef-client
+    /usr/sbin/update-rc.d chef-client defaults
     mkdir -p /var/log/chef
     /etc/init.d/chef-client start
 }
