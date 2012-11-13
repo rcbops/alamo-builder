@@ -34,6 +34,10 @@ Then run:
 
 This will install a duplicate version of bsdtar to /usr/local/bin/bsdtar, which provides a new enough libarchive to extract .ISO files (since OSX broke this functionality in recent versions).
 
+If this doesn't work for some reason, or you're unable to access the homebrew/dupes tap, you can just directly install libarchive, which provides the needed binary, like so:
+
+    brew install libarchive
+
 If you would like to do this a different way, you will need to make sure your dupe bsdtar binary is in /usr/local/bin or modify build.sh to provide the correct path.
 
 OPTIONS
