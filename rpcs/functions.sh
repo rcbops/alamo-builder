@@ -441,7 +441,7 @@ function download_cookbooks {
     set_git_proxy
 
     pushd /root
-    if [ ! -e /opt/rpcs/cookbooks ]; then
+    if [ ! -e /opt/rpcs/chef-cookbooks ]; then
         run_twice git ${git_string} clone http://github.com/rcbops/chef-cookbooks /opt/rpcs/chef-cookbooks 1>&9
         cd /opt/rpcs/chef-cookbooks
         run_twice git ${git_string} checkout iso 1>&9
