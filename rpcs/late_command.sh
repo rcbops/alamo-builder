@@ -17,7 +17,7 @@ update-alternatives --install /lib/plymouth/themes/text.plymouth text.plymouth /
 update-alternatives --set text.plymouth /lib/plymouth/themes/rpcs-text/rpcs-text.plymouth
 
 # Move installer items into target from bind mount
-cp /tmp/installer/opt/rpcs/*.{rb,sh} /opt/rpcs
+cp /tmp/installer/opt/rpcs/*.{rb,sh,py} /opt/rpcs
 cp /tmp/installer/opt/rpcs/version.cfg /opt/rpcs
 
 # Put EULA in place on disk

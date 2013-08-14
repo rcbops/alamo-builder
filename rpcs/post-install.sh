@@ -35,7 +35,7 @@ cd /root
 
 # Set some handy variables
 if [ $role = "Controller" ] || [ $role = "All-In-One" ]; then
-    chef=169.254.123.2
+    chef=127.0.0.1
 else
     chef=$net_con_ip
 fi
@@ -50,7 +50,7 @@ do_status 5 "Upgrading packages"
 apt_it_up
 
 do_status 10 "Installing chef client"
-install_chef
+install_chef_client
 disable_virbr0
 
 do_status 11 "Dropping the knife config"
@@ -75,23 +75,51 @@ if [ $role = "Controller" ] || [ $role = "All-In-One" ]; then
     do_status 15 "Configuring controller node"
     setup_iptables
 
-    do_status 20 "Grabbing the chef server VM (may take some time)"
-    get_chef_qcow
+    #do_status 20 "Grabbing the chef server VM (may take some time)"
+    #get_chef_qcow
 
-    do_status 25 "Building chef server VM (may take some time)"
-    build_chef_server
+    #do_status 25 "Building chef server VM (may take some time)"
+    #build_chef_server
 
-    do_status 50 "Starting chef server"
-    virsh start chef-server 1>&9
+    #do_status 50 "Starting chef server"
+    #virsh start chef-server 1>&9
 
-    do_status 60 "Waiting for chef server to start up"
-    port_test 10 30 $chef 22
+    #do_status 60 "Waiting for chef server to start up"
+    #port_test 10 30 $chef 22
 
-    do_status 62 "Generating and copying ssh keys"
-    generate_and_copy_ssh_keys
+    #do_status 62 "Generating and copying ssh keys"
+    #generate_and_copy_ssh_keys
+
+    do_status 20 "Installing Git"
+    install_git
+
+    do_status 21 "Installing RabbitMQ"
+    install_rabbit_mq
+
+    do_status 30 "Waiting for RabbitMQ to come up"
+    wait_for_rabbit
+
+    do_status 31 "Get RabbitMQ password for Chef User"
+    get_rabbit_chef_password
+
+    do_status 32 "Configuring RabbitMQ for chef"
+    configure_rabbit_for_chef 
+
+    do_status 33 "Test Chef RabbitMQ account"
+    test_rabbit_chef
+
+    do_status 35 "Installing Chef Server"
+    install_chef_server
+
+    do_status 51 "Setting up chef validation key distribution sevice"
+    setup_chef_validation_key_distribution_service
+
+    do_status 52 "Wait for key distribution service"
+    wait_for_key_distribution_service
 
     do_status 70 "Waiting for API server to start"
-    port_test 30 20 $chef 4000
+    port_test 30 20 localhost 4000
+    port_test 30 20 localhost 4080
 
     do_status 72 "Generating chef-client keys"
     generate_chef_keys

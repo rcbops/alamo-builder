@@ -25,8 +25,8 @@ else
     MINORVER=${RELEASE}
 fi
 
-MAJORVER="2.0.0"
-CODENAME="zarn"
+MAJORVER="4.6.0"
+CODENAME="orb"
 
 if ! git diff-index --quiet HEAD; then
     if [ "${RELEASE:-}" != "" ]; then
@@ -45,16 +45,15 @@ EOF
 PRIDE="${CODENAME}-v${MAJORVER}-${MINORVER}"
 UDEB_NAME="rpcs-pre rpcs-post kvmcheck proxy-check eula"
 
-CHEF_IMAGE_NAME="chef-server.qcow2"
-CHEF_IMAGE_HOST=${CHEF_IMAGE_HOST:-c390813.r13.cf1.rackcdn.com}
-CHEF_IMAGE_URL="http://${CHEF_IMAGE_HOST}/${CHEF_IMAGE_NAME}"
-ISO_URL="http://releases.ubuntu.com/precise/ubuntu-12.04.1-server-amd64.iso"
-ISO_MD5="a8c667e871f48f3a662f3fbf1c3ddb17"
+ISO_URL="http://releases.ubuntu.com/precise/ubuntu-12.04.2-server-amd64.iso"
+ISO_MD5="af5f788aee1b32c4b2634734309cc9e9"
 ISO_CUSTOM="rpcs-pridery.iso"
 CIRROS_IMAGE_NAME="cirros-0.3.0-x86_64-uec.tar.gz"
 CIRROS_URL="https://launchpadlibrarian.net/83305869/${CIRROS_IMAGE_NAME}"
 PRECISE_IMAGE_NAME="precise-server-cloudimg-amd64.tar.gz"
 PRECISE_URL="http://cloud-images.ubuntu.com/precise/current/${PRECISE_IMAGE_NAME}"
+CHEF_SERVER_DEB_URL="http://www.opscode.com/chef/download-server?p=ubuntu&pv=12.04&m=x86_64"
+CHEF_SERVER_DEB_NAME="chef-server.deb"
 
 # location, location, location
 FOLDER_BASE=$(pwd)
@@ -89,32 +88,23 @@ mkdir -p "$FOLDER_ISO_CUSTOM"
 mkdir -p "$FOLDER_ISO_INITRD"
 
 ISO_FILENAME="${FOLDER_RESOURCES}/$(basename $ISO_URL)"
-CHEF_FILENAME="${FOLDER_RESOURCES}/${CHEF_IMAGE_NAME}"
-CHEF_DEB_FILENAME="${FOLDER_RESOURCES}/chef-full.deb"
 PRECISE_FILENAME="${FOLDER_RESOURCES}/${PRECISE_IMAGE_NAME}"
 CIRROS_FILENAME="${FOLDER_RESOURCES}/${CIRROS_IMAGE_NAME}"
+CHEF_SERVER_DEB_FILENAME="${FOLDER_RESOURCES}/${CHEF_SERVER_DEB_NAME}"
 
-# download the chef-server image
-if [ ! -e "${CHEF_FILENAME}.pristine" ] && [ "${FLAVOR}" = "FULL" ]; then
-  echo "Downloading ${CHEF_IMAGE_URL} ..."
-  curl --output "${CHEF_FILENAME}.pristine" -L "${CHEF_IMAGE_URL}"
-fi
+download(){
+  URL="$1"
+  FILENAME="$2"
+  if [ ! -e "$FILENAME" ] && [ "${FLAVOR}" = "FULL" ]; then
+    echo "Downloading $FILENAME ..."
+    curl --output "${FILENAME}" -L "${URL}"
+  fi
+}
 
-if [ ! -e "${PRECISE_FILENAME}" ] && [ "${FLAVOR}" = "FULL" ]; then
-  echo "Downloading Precise Image ..."
-  curl --output "${PRECISE_FILENAME}" -L "${PRECISE_URL}"
-fi
-
-if [ ! -e "${CIRROS_FILENAME}" ] && [ "${FLAVOR}" = "FULL" ]; then
-  echo "Downloading Cirros Image ..."
-  curl --output "${CIRROS_FILENAME}" -L "${CIRROS_URL}"
-fi
-
-# download the Chef Omnibus installer
-if [ ! -e "${CHEF_DEB_FILENAME}" ] && [ "${FLAVOR}" = "FULL" ]; then
-  echo "Downloading Chef Omnibus ..."
-  curl --output "${CHEF_DEB_FILENAME}" -L http://s3.amazonaws.com/opscode-full-stack/ubuntu-11.04-x86_64/chef-full_10.12.0-1_amd64.deb
-fi
+download "$PRECISE_URL" "$PRECISE_FILENAME"&
+download "$CIRROS_URL" "$CIRROS_FILENAME"&
+download "$CHEF_SERVER_DEB_URL" "$CHEF_SERVER_DEB_FILENAME"&
+wait
 
 # download the installation disk if we haven't already or it is corrupted somehow
 if [ -e "$ISO_FILENAME" ]; then
@@ -177,10 +167,6 @@ mkdir -p "$FOLDER_ISO_CUSTOM_RPCS"
 
 mkdir -p "$FOLDER_ISO_CUSTOM_RPCS/resources"
 # move over the chef-server.qcow2
-if [ -e "${CHEF_FILENAME}.pristine" ] && [ "${FLAVOR}" = "FULL" ]; then
-    echo "Embedding the chef-server image ..."
-    cp "${CHEF_FILENAME}.pristine" "${FOLDER_ISO_CUSTOM_RPCS}/resources/"
-fi
 
 if [ -e "${PRECISE_FILENAME}" ] && [ "${FLAVOR}" = "FULL" ]; then
     echo "Embedding the precise image ..."
@@ -198,21 +184,20 @@ else
     echo "cirros_url=\"$CIRROS_URL\"" >> ${FOLDER_ISO_CUSTOM_RPCS}/rpcs.cfg
 fi
 
-# and the chef installer
-if [ -e "${CHEF_DEB_FILENAME}" ] && [ "${FLAVOR}" = "FULL" ]; then
-    echo "Embedding the Chef Omnibus installer ..."
-    cp "${CHEF_DEB_FILENAME}" "${FOLDER_ISO_CUSTOM_RPCS}/resources/"
+if [ -e ${CHEF_SERVER_DEB_FILENAME} ] && [ "${FLAVOR}" == "FULL" ]; then
+  echo "Embedding chef server deb."
+  cp "${CHEF_SERVER_DEB_FILENAME}" "${FOLDER_ISO_CUSTOM_RPCS}/resources/"
 fi
 
 # add some files
 echo "Add extra files ..."
 chmod u+w "$FOLDER_ISO_CUSTOM"
+cp "${FOLDER_BASE}/rpcs/functions.sh" "$FOLDER_ISO_CUSTOM_RPCS/"
 cp "${FOLDER_BASE}/rpcs/late_command.sh" "$FOLDER_ISO_CUSTOM_RPCS/"
-sed -e "s/@CHEF_IMAGE_HOST@/${CHEF_IMAGE_HOST}/" "${FOLDER_BASE}/rpcs/functions.sh" > ${FOLDER_BASE}/rpcs/functions.sh.templated
-mv "${FOLDER_BASE}/rpcs/functions.sh.templated" "$FOLDER_ISO_CUSTOM_RPCS/functions.sh"
 cp "${FOLDER_BASE}/rpcs/post-install.sh" "$FOLDER_ISO_CUSTOM_RPCS/post-install.sh"
 cp "${FOLDER_BASE}/rpcs/status.sh" "$FOLDER_ISO_CUSTOM_RPCS/"
 cp "${FOLDER_BASE}/rpcs/status.rb" "$FOLDER_ISO_CUSTOM_RPCS/"
+cp "${FOLDER_BASE}/rpcs/amqping.py" "$FOLDER_ISO_CUSTOM_RPCS/"
 cp "${FOLDER_BASE}/version.cfg" "$FOLDER_ISO_CUSTOM_RPCS/"
 cp "${FOLDER_BASE}/rpcs/RPCS_EULA.txt" "$FOLDER_ISO_CUSTOM_RPCS/"
 

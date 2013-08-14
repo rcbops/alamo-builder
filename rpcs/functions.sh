@@ -1,5 +1,13 @@
 date_string="%a, %d %b %Y %X %z"
 git_string=""
+knife=/usr/bin/knife
+
+
+function pwgen() {
+    local length=${1:-8}
+    tr -dc A-Za-z0-9_ < /dev/urandom | head -c ${length}
+    echo # append \n
+}
 
 # return the integer part of a float
 function get_float() {
@@ -24,7 +32,7 @@ function set_git_proxy() {
 function set_chef_proxy() {
     if [ -n "${http_proxy}" ]; then
         echo "http_proxy \"${http_proxy}\"" >> /etc/chef/client.rb
-        echo "no_proxy \"169.254.*\"" >> /etc/chef/client.rb
+        #echo "no_proxy \"169.254.*\"" >> /etc/chef/client.rb
     fi
 }
 
@@ -108,11 +116,11 @@ function do_exit() {
         if [ $role = "Controller" ] || [ $role = "All-In-One" ]; then
             # on failure remove all the bits from the controller
             rm -rf /root/.ssh
-            rm -rf /opt/rpcs/chef-server.xml
-            do_substatus 20 "Destroying the chef-server" "error"
-            virsh destroy chef-server
-            virsh undefine chef-server
-            rm -f /opt/rpcs/chef-server.qcow2
+            # rm -rf /opt/rpcs/chef-server.xml
+            # do_substatus 20 "Destroying the chef-server" "error"
+            # virsh destroy chef-server
+            # virsh undefine chef-server
+            # rm -f /opt/rpcs/chef-server.qcow2
             rm -rf /opt/rpcs/chef-cookbooks
             do_substatus 30 "Uninstalling mysql" "error"
             apt-get -y purge `dpkg -l | grep mysql | awk '{print $2}'`
@@ -162,19 +170,25 @@ function run_twice() {
     fi
 }
 
-function install_chef() {
+function install_chef_client() {
     # Make it so
-    echo chef chef/chef_server_url string http://$chef:4000 | debconf-set-selections
+    #echo chef chef/chef_server_url string https://$chef:443 | debconf-set-selections
     mkdir -p /etc/chef
-    if [ ! -e /opt/rpcs/chef-full.deb ]; then
-        run_twice curl -L http://opscode.com/chef/install.sh | bash 1>&9
-    else
-        dpkg -i /opt/rpcs/chef-full.deb 1>&9
-    fi
-    cat >> /etc/chef/client.rb <<EOF
-    chef_server_url "http://${chef}:4000"
-    environment "rpcs"
-EOF
+
+    CLIENT_VERSION=${CLIENT_VERSION:-"11.2.0-1"}
+    CHEF_URL=${CHEF_URL:-https://$chef:4000}
+    ENVIRONMENT=${ENVIRONMENT:-rpcs}
+
+    sudo apt-get install -y curl
+    curl -skS -L http://www.opscode.com/chef/install.sh | bash -s - -v ${CLIENT_VERSION} 1>&9
+    mkdir -p /etc/chef
+
+    #chef-client config file
+    cat <<EOF2 > /etc/chef/client.rb
+Ohai::Config[:disabled_plugins] = ["passwd"]
+chef_server_url "${CHEF_URL}"
+chef_environment "${ENVIRONMENT}"
+EOF2
 }
 
 function disable_virbr0 {
@@ -220,9 +234,9 @@ function setup_iptables {
     sysctl -p /etc/sysctl.conf 1>&9
 
     # Add iptables rule...
-    if ! iptables -t nat -nvL PREROUTING | grep -q 4000; then
-        iptables -t nat -A PREROUTING -s $net_mgmt -p tcp --dport 4000 -j DNAT --to-dest 169.254.123.2
-    fi
+#    if ! iptables -t nat -nvL PREROUTING | grep -q 4000; then
+#        iptables -t nat -A PREROUTING -s $net_mgmt -p tcp --dport 4000 -j DNAT --to-dest 169.254.123.2
+#    fi
 
     if ! iptables -t nat -nvL POSTROUTING | grep -q MASQUERADE; then
         iptables -t nat -A POSTROUTING -o $net_public_iface -j MASQUERADE
@@ -234,126 +248,120 @@ function setup_iptables {
     run_twice apt-get -y install iptables-persistent 1>&9
 }
 
-function get_chef_qcow {
-    do_substatus 10 "Downloading the pristine chef-server image" "chef-server"
-    # Get the chef-server image
-    if [ ! -e /opt/rpcs/chef-server.qcow2.pristine ]; then
-        run_twice wget -nv -O /opt/rpcs/chef-server.qcow2.pristine http://@CHEF_IMAGE_HOST@/chef-server.qcow2
-    fi
-    do_substatus 20 "Copying pristine chef-server image" "chef-server"
-    if [ ! -e /opt/rpcs/chef-server.qcow2 ]; then
-        cp /opt/rpcs/chef-server.qcow2.pristine /opt/rpcs/chef-server.qcow2
-    fi
+function install_git(){
+    apt-get install -y git 1>&9
 }
 
-function build_chef_server {
-    # Drop the definition in
-    do_substatus 30 "Building the chef-server definition" "chef-server"
-    if [ ! -e /opt/rpcs/chef-server.xml ]; then
-        cat > /opt/rpcs/chef-server.xml << EOF
-<domain type='${qemu_domain_type}'>
-  <name>chef-server</name>
-  <memory>2097152</memory>
-  <currentMemory>2097152</currentMemory>
-  <vcpu>2</vcpu>
-  <os>
-    <type arch='x86_64' machine='pc-0.12'>hvm</type>
-    <boot dev='hd'/>
-  </os>
-  <features>
-    <acpi/>
-    <apic/>
-    <pae/>
-  </features>
-  <clock offset='utc'/>
-  <on_poweroff>destroy</on_poweroff>
-  <on_reboot>restart</on_reboot>
-  <on_crash>restart</on_crash>
-  <devices>
-    <emulator>${qemu_emulator}</emulator>
-    <disk type='file' device='disk'>
-      <driver name='qemu' type='qcow2' cache='unsafe'/>
-      <source file='/opt/rpcs/chef-server.qcow2'/>
-      <target dev='vda' bus='virtio'/>
-      <alias name='virtio-disk0'/>
-      <address type='pci' domain='0x0000' bus='0x00' slot='0x05' function='0x0'/>
-    </disk>
-    <interface type='bridge'>
-      <source bridge='chefbr0'/>
-      <target dev='vnet0'/>
-      <model type='virtio'/>
-      <alias name='net0'/>
-    </interface>
-    <serial type='pty'>
-      <target port='0'/>
-      <alias name='serial0'/>
-    </serial>
-    <console type='pty' tty='/dev/pts/1'>
-      <target type='serial' port='0'/>
-      <alias name='serial0'/>
-    </console>
-    <input type='mouse' bus='ps2'/>
-    <graphics type='vnc' listen='0.0.0.0' autoport='yes'/>
-    <sound model='ac97'>
-      <alias name='sound0'/>
-      <address type='pci' domain='0x0000' bus='0x00' slot='0x04' function='0x0'/>
-    </sound>
-    <video>
-      <model type='cirrus' vram='9216' heads='1'/>
-      <model type='cirrus' vram='9216' heads='1'/>
-      <alias name='video0'/>
-      <address type='pci' domain='0x0000' bus='0x00' slot='0x02' function='0x0'/>
-    </video>
-    <memballoon model='virtio'>
-      <alias name='balloon0'/>
-      <address type='pci' domain='0x0000' bus='0x00' slot='0x06' function='0x0'/>
-    </memballoon>
-  </devices>
-</domain>
+function setup_chef_validation_key_distribution_service(){
+  apt-get install -y xinetd 1>&9
+  cat > /etc/xinetd.d/chefgetvalidation <<END_XINTED_CONFIG
+service chefgetvalidation
+{
+  disable           = no
+  socket_type       = stream
+  type              = UNLISTED
+  protocol          = tcp
+  port              = 7777
+  wait              = no
+  user              = root
+  server            = /bin/cat
+  server_args       = /etc/chef-server/chef-validator.pem
+}
+END_XINTED_CONFIG
+stop xinetd; start xinetd
+}
+
+function wait_for_key_distribution_service(){
+    port_test 30 20 localhost 7777
+}
+
+function install_rabbit_mq(){
+  apt-get install -y rabbitmq-server
+  /etc/init.d/rabbitmq-server restart
+}
+
+function wait_for_rabbit(){
+  port_test 30 20 localhost 5672
+}
+
+get_rabbit_chef_password(){
+  pw_file=/opt/rpcs/.CHEF_RMQ_PW
+  if [ -e $pw_file ];
+  then
+    export CHEF_RMQ_PW="$(cat $pw_file)"
+  else
+    export CHEF_RMQ_PW="$(pwgen 16)"
+    echo "$CHEF_RMQ_PW" >/opt/rpcs/.CHEF_RMQ_PW
+  fi
+}
+
+function configure_rabbit_for_chef(){
+  vhost="/chef"
+  user="chef"
+  rabbitmqctl list_vhosts |grep -q $vhost \
+    || rabbitmqctl add_vhost /chef
+
+  rabbitmqctl list_users |grep -q $user \
+    && rabbitmqctl delete_user chef
+  rabbitmqctl add_user chef "$CHEF_RMQ_PW"
+
+  rabbitmqctl set_permissions -p $vhost $user '.*' '.*' '.*'
+
+}
+
+function test_rabbit_chef(){
+  amqping=/opt/rpcs/amqping.py
+  apt-get install -y python-pip
+  pip install pika
+  python $amqping -u chef -v chef -p "$CHEF_RMQ_PW"
+}
+
+function install_chef_server(){
+  echo "\$HOME=$HOME"
+  [ -z $HOME ] && export HOME=/opt/chef-server/embedded
+
+  do_substatus 0 "Installing Chef Server Debian package"
+
+  dpkg -l chef-server 2>/dev/null|grep -q ^ii \
+    || dpkg -i /opt/rpcs/chef-server.deb
+
+  mkdir -p /etc/chef-server
+
+  #Initial chef-server config to disable rabbit.
+
+  cat > /etc/chef-server/chef-server.rb <<EOF
+nginx["ssl_port"] = 4000
+nginx["non_ssl_port"] = 4080
+nginx["enable_non_ssl"] = true
+rabbitmq["enable"] = false
+rabbitmq["password"] = "$CHEF_RMQ_PW"
+bookshelf['url'] = "https://#{node['ipaddress']}:4000"
 EOF
-    fi
 
-    # Create private bridge for Chef
-    do_substatus 35 "Creating private bridge for Chef ..." "chef-server"
-    if ! grep -q "chefbr0" /etc/network/interfaces; then
-        cat >> /etc/network/interfaces << EOF
+  do_substatus 50 "Chef Server initial configuration"
 
-auto chefbr0
-iface chefbr0 inet static
-      address 169.254.123.1
-      netmask 255.255.255.0
-      bridge_ports none
-      bridge_fd 0
-      bridge_stp off
-      bridge_maxwait 0
+  chef-server-ctl reconfigure ||: #first run will fail
 
-EOF
-    fi
+  # Change rabbit password in chef JSON secrets file.
+  python <<EOP
+import json
+path="/etc/chef-server/chef-server-secrets.json"
+hash=json.load(open(path))
+hash["rabbitmq"]["password"]="$CHEF_RMQ_PW"
+open(path,"w").writelines(
+  json.dumps(hash,sort_keys=True,indent=4, separators=(",", ": "))
+)
+EOP
 
-    # And bring it up
-    do_substatus 39 "Bringing up chefbr0 ..." "chef-server"
-    if ! /sbin/ifconfig | grep -q "chefbr0"; then
-        ifup chefbr0 > /dev/null 2>&1
-    fi
+  do_substatus 90 "Configuring Chef Server for external RabbitMQ"
 
-    # Remove existing image if any
-    do_substatus 40 "Removing the existing chef-server" "chef-server"
-    if virsh list | grep -q chef-server; then
-        virsh destroy chef-server 1>&9
-    fi
+  # Run chef-solo to configure chef server
+  chef-server-ctl reconfigure ||:
+  chef-server-ctl reconfigure
 
-    # Un-Define image and kick it
-    do_substatus 50 "Undefining the existing chef-server" "chef-server"
-    if virsh list --all | grep -q chef-server; then
-        virsh undefine chef-server 1>&9
-    fi
+  export HOME=/root
 
-    # Define image and kick it
-    do_substatus 60 "Creating the existing chef-server" "chef-server"
-    virsh define /opt/rpcs/chef-server.xml 1>&9
-    virsh autostart chef-server 1>&9
-
-    do_substatus_close
+  do_substatus_close
 }
 
 function port_test() { # $1 delay, $2 max, $3 host, $4 port
@@ -369,25 +377,8 @@ function port_test() { # $1 delay, $2 max, $3 host, $4 port
     done
 }
 
-function generate_and_copy_ssh_keys {
-    do_substatus 10 "Generating new SSH key" "ssh-keys"
-    mkdir -p .ssh; chmod 0700 .ssh
-    ssh-keygen -q -f .ssh/id_rsa -N ''
-    cat > .ssh/known_hosts << "EOF"
-|1|IDUzyhtkjSOlIdtFsTniYm7JJvA=|UGu+9OaDzOMhgL+tr+aNEOmkd98= ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBMHsA41RW2BGZS9osE5JvfxcZchz+W57PVqul8THkIQVehqoWxzMJkq16RQxylpV22EUXSiBj1bfKhy2/dkkpn4=
-|1|RwkLZbV+0oIX4vCDsr7mWVRs1gc=|U2e6O501zzVFJ3dFkHdN/ZCp+Ko= ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBMHsA41RW2BGZS9osE5JvfxcZchz+W57PVqul8THkIQVehqoWxzMJkq16RQxylpV22EUXSiBj1bfKhy2/dkkpn4=
-|1|eE+nAqfyigLQhi+nd/VkTUmbss0=|GFCPoZvEPOUcDdQEma8/7QILaNU= ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBMHsA41RW2BGZS9osE5JvfxcZchz+W57PVqul8THkIQVehqoWxzMJkq16RQxylpV22EUXSiBj1bfKhy2/dkkpn4=
-EOF
-
-    do_substatus 20 "Copying new key in ..." "ssh-keys"
-    sshpass -p demo ssh-copy-id -i .ssh/id_rsa.pub rack@$chef 1>&9
-
-    do_substatus 30 "Setting new password ..." "ssh-keys"
-    ssh rack@$chef "sudo chpasswd" <<< "rack:$(pwgen -s 12 1)"
-}
-
 function drop_knife_config {
-    # Reregister chef clients and snag keys for local use
+    pushd /root
     mkdir -p .chef
     cat > .chef/knife.rb << EOF
 log_level                :info
@@ -396,15 +387,26 @@ node_name                '$fqdn'
 client_key               '/etc/chef/client.pem'
 validation_client_name   'chef-validator'
 validation_key           '/etc/chef/validation.pem'
-chef_server_url          'http://${chef}:4000'
+chef_server_url          'https://${chef}:4000'
 cache_type               'BasicFile'
 cache_options( :path => '/etc/chef/checksums' )
 cookbook_path            '/opt/rpcs/chef-cookbooks/cookbooks'
 EOF
+  popd
 }
 
 function generate_chef_keys {
-    ssh rack@$chef "sudo sh -c 'cat > /usr/share/chef-server-api/public/rpcs.cfg'; knife client reregister rack -f .chef/rack.pem; knife client reregister chef-validator -f .chef/validation.pem; sudo cp .chef/validation.pem /usr/share/chef-server-api/public; sudo chmod +r /usr/share/chef-server-api/public/*; yes | knife client delete $fqdn &> /dev/null; knife environment create -d rpcs &>/dev/null; knife client create $fqdn -d -a" < /opt/rpcs/rpcs.cfg | tail -n+2 > /etc/chef/client.pem
+    # Admin creds for creating new clients and environments.
+    knife_admin="--user admin --key /etc/chef-server/admin.pem"
+
+    # Delete existing client
+    $knife client list $knife_admin|grep -q $fqdn \
+      && $knife client delete $fqdn -y $knife_admin||true
+
+    # Create new admin client, and environment
+    $knife client create $fqdn -d -a $knife_admin > /etc/chef/client.pem
+    $knife environment list |grep -q rpcs \
+      ||$knife environment create -d rpcs &>/dev/null
 }
 
 function initialize_submodules() {
@@ -436,7 +438,6 @@ function update_submodules() {
 
 function download_cookbooks {
     # grab cookbooks
-    apt-get install -y git 1>&9
 
     set_git_proxy
 
@@ -444,7 +445,7 @@ function download_cookbooks {
     if [ ! -e /opt/rpcs/chef-cookbooks ]; then
         run_twice git ${git_string} clone http://github.com/rcbops/chef-cookbooks /opt/rpcs/chef-cookbooks 1>&9
         cd /opt/rpcs/chef-cookbooks
-        run_twice git ${git_string} checkout iso 1>&9
+        run_twice git ${git_string} checkout master 1>&9
 
         run_twice "initialize_submodules"
 
@@ -487,7 +488,7 @@ function upload_cookbooks_to_chef() {
 
 function get_validation_pem() {
     echo "Grabbing validation.pem from chef-server ..."
-    wget --no-proxy -nv http://${chef}:4000/validation.pem -O /etc/chef/validation.pem
+    nc $chef 7777 > /etc/chef/validation.pem
 }
 
 function commafy {
@@ -592,22 +593,21 @@ EOF
 
 
 function assign_roles() {
-    if [ $role = "All-In-One" ]; then
-        knife node run_list add $fqdn "role[single-controller]"
-        knife node run_list add $fqdn "role[single-compute]"
-        knife node run_list add $fqdn "role[collectd-client]"
+    # All nodes get these roles
+    knife node run_list add $fqdn "role[collectd-client]"
+
+    # Role specific, errr roles.
+    case $role in
+      All-In-One|Controller)
+        knife node run_list add $fqdn "role[ha-controller1]"
         knife node run_list add $fqdn "role[collectd-server]"
         knife node run_list add $fqdn "role[graphite]"
-    else
-        knife node run_list add $fqdn "role[single-${role,,}]"
-        knife node run_list add $fqdn "role[collectd-client]"
-        if [ $role = "Controller" ]; then
-            knife node run_list add $fqdn "role[collectd-server]"
-            knife node run_list add $fqdn "role[graphite]"
-        fi
-    fi
+      ;;
+      All-In-One|Compute)
+        knife node run_list add $fqdn "role[single-compute]"
+      ;;
+    esac
 }
-
 
 function run_chef() {
     set -o pipefail

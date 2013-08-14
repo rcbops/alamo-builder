@@ -91,6 +91,9 @@ function main()
             STATUS 0 "Starting installation of ${PRODUCT_SHORT}"
         fi
         while read -r line; do
+            # Read line from status_fifo, if the first word is a valid
+            # function name, call it. Post-install writes COMPLETE to the
+            # status fifo in the do_exit trap, so this script will restart it.
             unset f
             declare -a "f=(${line})"
             if declare -f ${f[0]} > /dev/null; then
